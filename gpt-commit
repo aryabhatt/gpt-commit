@@ -1,0 +1,82 @@
+#! /usr/bin/env python
+
+import openai # CBORG API Proxy Server is OpenAI-compatible through the openai module
+from pathlib import Path
+import os
+import click
+import json
+from git import Repo
+
+# get the API key from secrets file
+user_dir = os.path.expanduser('~')
+with open(os.path.join(user_dir, '.config/cborg/secrets.json')) as f:
+    secrets = json.load(f)
+    api_key = secrets['CBORG_API_KEY']
+    base_url = secrets['CBORG_BASE_URL']
+
+
+client = openai.OpenAI(api_key=api_key, base_url=base_url)
+models = [
+    "openai/gpt-4.1",
+    "openai/gpt-4o-mini",
+    "anthropic/claude-haiku",
+    "anthropic/claude-sonnet",
+    "anthropic/claude-opus",
+    "google/gemini-pro",    
+    "google/gemini-flash",
+    "aws/llama-3.1-405b",
+    "aws/llama-3.1-70b",
+    "aws/llama-3.1-8b",
+    "aws/command-r-plus-v1",
+    "aws/command-r-v1"
+]
+
+
+@click.command()
+@click.argument("filename", type=click.Path(exists=True))
+@click.option("--model", default="openai/gpt-4.1", type=click.Choice(models), help="Model to use")
+def gpt_commit(filename, model):
+
+    # Check if this is ideed a git repo
+    cwd = Path.cwd()
+    repo = Repo(cwd)
+    if repo.bare:
+        print("This is not a git repository")
+
+    # Get the dff from the last commit
+    diff_msg = repo.git.diff(filename)
+
+    # send the diff to the model
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "user", 
+                "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
+            }
+        ],
+        temperature=0.0   # Optional: set model temperature to control amount of variance in response
+    )
+
+    # Check if the response is valid 
+    if response is None:
+        print("No response from the model") 
+        return
+
+    # If the response.error is not None, print the error
+    error = response.get("error")
+    if error:
+        print(f"Error: {error}")
+        return
+
+    if response and response.choices:
+        commit_msg = response.choices[0].message.content
+        
+        # Write the commit message to a file and invoke git commit with the -t option
+        commit_edit_path = Path(repo.working_tree_dir) /  "commit_msg.txt"
+        with open(commit_edit_path, "w") as f:
+            f.write(commit_msg.strip())
+        os.system(f"git commit {filename} -t {commit_edit_path}")
+
+if __name__ == "__main__":
+    gpt_commit()
