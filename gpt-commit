@@ -70,7 +70,8 @@ def gpt_commit(filename, model):
         commit_edit_path = Path(repo.working_tree_dir) /  "commit_msg.txt"
         with open(commit_edit_path, "w") as f:
             f.write(commit_msg.strip())
-        os.system(f"git commit {filename} -t {commit_edit_path}")
+        click.edit(filename=commit_edit_path)
+        os.system(f"git commit {filename} -F {commit_edit_path}")
 
 if __name__ == "__main__":
     gpt_commit()
