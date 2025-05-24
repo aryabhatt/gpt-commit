@@ -63,12 +63,6 @@ def gpt_commit(filename, model):
         print("No response from the model") 
         return
 
-    # If the response.error is not None, print the error
-    error = response.get("error")
-    if error:
-        print(f"Error: {error}")
-        return
-
     if response and response.choices:
         commit_msg = response.choices[0].message.content
         
