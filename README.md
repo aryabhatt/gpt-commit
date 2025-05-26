@@ -24,7 +24,7 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
     ```json
     {
         "CBORG_API_KEY": "your_api_key_here",
-        "CBORG_BASE_URL": "httsps://api.cborg.gov"
+        "CBORG_BASE_URL": "httsps://api.cborg.lbl.gov"
     }
     ```
 3. **Run the script**:
