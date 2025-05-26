@@ -78,6 +78,9 @@ def stage_and_commit(repo, filename, commit_msg_file):
     except Exception as e:
         print(f"Error during staging or committing: {e}")
 
+# Main entry point for the script
+client = get_client()
+models = get_models(client)
 
 @click.command()
 @click.option("--filename", type=click.Path(exists=True))
@@ -91,12 +94,6 @@ def gpt_commit(filename, model, list_models=False):
     \n    gpt-commit <filename> --model openai/gpt-4.1
     \n    gpt-commit --list-models
     """
-
-    # Get the OpenAI client
-    client = get_client()
-
-    # Get the list of available models
-    models = get_models(client)
 
     # if list_models is True, print the available models and exit
     if list_models:
