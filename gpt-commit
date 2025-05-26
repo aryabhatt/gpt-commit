@@ -1,41 +1,124 @@
 #! /usr/bin/env python
 
 import openai # CBORG API Proxy Server is OpenAI-compatible through the openai module
-from pathlib import Path
-import os
-import click
 import json
+import click
 from git import Repo
+from pathlib import Path
 
-# get the API key from secrets file
-user_dir = os.path.expanduser('~')
-with open(os.path.join(user_dir, '.config/cborg/secrets.json')) as f:
-    secrets = json.load(f)
-    api_key = secrets['CBORG_API_KEY']
-    base_url = secrets['CBORG_BASE_URL']
+def get_client():
+    """    
+    Get an OpenAI client instance with API key and base URL from from secrets file.
+    Retruns:
+        openai.OpenAI: An instance of the OpenAI client.
+    """
+    secrets_file = Path.home() / ".config/cborg/secrets.json"
+    with open(secrets_file, "r") as f:
+        secrets = json.load(f)
+        api_key = secrets['CBORG_API_KEY']
+        base_url = secrets['CBORG_BASE_URL']
+    return openai.OpenAI(api_key=api_key, base_url=base_url)
 
+def get_models(client):
+    """
+    Fetches the list of available models from the OpenAI client.
+    Args:
+        client (openai.OpenAI): An instance of the OpenAI client.
+    Returns:
+        list: A list of model IDs.
+    """
+    try:
+        models = client.models.list()
+        return [model.id for model in models.data]
+    except Exception as e:
+        print(f"Error fetching models: {e}")
+        return []
+    
+def generate_commit_message(client, diff_msg, model):
+    """
+    Generates a commit message based on the provided diff message using the specified model.
+    
+    Args:
+        diff_msg (str): The diff message to be used for generating the commit message.
+        model (str): The model to be used for generating the commit message.
+    
+    Returns:
+        str: The generated commit message.
+    """
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "user", 
+                "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
+            }
+        ],
+        temperature=0.0  
+    )
+    
+    if response and response.choices:
+        return response.choices[0].message.content.strip()
+    else:
+        return None
 
-client = openai.OpenAI(api_key=api_key, base_url=base_url)
-models = [
-    "openai/gpt-4.1",
-    "openai/gpt-4o-mini",
-    "anthropic/claude-haiku",
-    "anthropic/claude-sonnet",
-    "anthropic/claude-opus",
-    "google/gemini-pro",    
-    "google/gemini-flash",
-    "aws/llama-3.1-405b",
-    "aws/llama-3.1-70b",
-    "aws/llama-3.1-8b",
-    "aws/command-r-plus-v1",
-    "aws/command-r-v1"
-]
+def stage_and_commit(repo, filename, commit_msg_file):
+    """
+    Stages the specified file and commits it with the provided commit message.
+    
+    Args:
+        repo (git.Repo): The Git repository instance.
+        filename (str): The name of the file to be staged and committed.
+        commit_msg_file (file): The file containing the commit message.
+    """
+    try:
+        repo.git.add(filename)
+        with open(commit_msg_file.name, "r") as f:
+            commit_msg = f.read().strip()
+        repo.index.commit(commit_msg)
+    except Exception as e:
+        print(f"Error during staging or committing: {e}")
 
 
 @click.command()
-@click.argument("filename", type=click.Path(exists=True))
+@click.option("--filename", type=click.Path(exists=True))
+@click.option("--list-models", is_flag=True, help="List available models")
 @click.option("--model", default="openai/gpt-4.1", type=click.Choice(models), help="Model to use")
-def gpt_commit(filename, model):
+def gpt_commit(filename, model, list_models=False):
+
+    """Generate a commit message using a language model for the given file.
+    \n\n    Example usage:
+    \n    gpt-commit <filename>
+    \n    gpt-commit <filename> --model openai/gpt-4.1
+    \n    gpt-commit --list-models
+    """
+
+    # Get the OpenAI client
+    client = get_client()
+
+    # Get the list of available models
+    models = get_models(client)
+
+    # if list_models is True, print the available models and exit
+    if list_models:
+        print("Available models:")
+        for m in models:
+            print(f"- {m}")
+        return
+
+    # Check if filename is provided
+    if not filename:
+        print(gpt_commit.__doc__)
+        return
+
+    # Check if model is provided and valid
+    if not model:
+        model = "openai/gpt-4.1"
+    elif model not in models:
+        print(f"Model '{model}' is not available. Please choose from the following models:")
+        for m in models:
+            print(f"- {m}")
+        return
+
 
     # Check if this is ideed a git repo
     cwd = Path.cwd()
@@ -46,32 +129,15 @@ def gpt_commit(filename, model):
     # Get the dff from the last commit
     diff_msg = repo.git.diff(filename)
 
-    # send the diff to the model
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {
-                "role": "user", 
-                "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
-            }
-        ],
-        temperature=0.0   # Optional: set model temperature to control amount of variance in response
-    )
-
-    # Check if the response is valid 
-    if response is None:
-        print("No response from the model") 
-        return
-
-    if response and response.choices:
-        commit_msg = response.choices[0].message.content
+    commit_msg = generate_commit_message(client, diff_msg, model)
         
-        # Write the commit message to a file and invoke git commit with the -t option
-        commit_edit_path = Path(repo.working_tree_dir) /  "commit_msg.txt"
-        with open(commit_edit_path, "w") as f:
-            f.write(commit_msg.strip())
-        click.edit(filename=commit_edit_path)
-        os.system(f"git commit {filename} -F {commit_edit_path}")
+    # create a file to edit the commit message
+    with open("commit_msg.txt", "w") as commit_msg_file:
+        commit_msg_file.write(commit_msg)
+    click.edit(filename=commit_msg_file.name)
+
+    # commmt the file with the commit message 
+    stage_and_commit(repo, filename, commit_msg_file)
 
 if __name__ == "__main__":
     gpt_commit()
