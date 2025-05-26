@@ -20,9 +20,7 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
    ```bash
    pip install openai click gitpython
     ```
-## Usage
-    **Get and API Key and save it in `~/.config/gpt_commit/config.json`**:
-
+3. **Usage**: Obtain an API key and save it in `~/.config/cborg/secrets.json`.
     ```json
     {
         "CBORG_API_KEY": "your_api_key_here",
@@ -31,10 +29,10 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
     ```
 3. **Run the script**:
     ```bash
-    gpt_commit <file_path> [--model <model_name>] [--list-models]
-    ```
+    gpt-commit <file_path> [--model <model_name>] [--list-models]
+   ```
     
     - `<file_path>`: Path to the file you want to commit.
     - `--model <model_name>`: Specify the model to use (default is `openai/gpt-4.1`).
     - `--list-models`: List available models.
-    ```
+
