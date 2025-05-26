@@ -1,7 +1,5 @@
 # GPT-Commit
 
-[⬇️ Download `gpt_commit.py`](https://github.com/aryabhatt/gpt-commit/raw/main/gpt_commit.py)
-
 A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatible API) and stages/commits files in Git.
 
 ## Features
@@ -13,16 +11,30 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
 
 ## Installation
 1. **Download the script**:  
-   [⬇️ Download `gpt_commit.py`](https://github.com/aryabhatt/gpt-commit/raw/main/gpt_commit.py)
+   ```bash
+    git clone https://git.github.com/aryabhatt/gpt-commit.git
+    cd gpt-commit
+    ```
 
 2. **Dependencies**:
    ```bash
    pip install openai click gitpython
-
+    ```
 ## Usage
     **Get and API Key and save it in `~/.config/gpt_commit/config.json`**:
+
     ```json
     {
         "CBORG_API_KEY": "your_api_key_here",
         "CBORG_BASE_URL": "httsps://api.cborg.gov"
     }
+    ```
+3. **Run the script**:
+    ```bash
+    gpt_commit <file_path> [--model <model_name>] [--list-models]
+    ```
+    
+    - `<file_path>`: Path to the file you want to commit.
+    - `--model <model_name>`: Specify the model to use (default is `openai/gpt-4.1`).
+    - `--list-models`: List available models.
+    ```
