@@ -126,14 +126,14 @@ def gpt_commit(filename, model, list_models):
     diff_msg = repo.git.diff(filename)
 
     commit_msg = generate_commit_message(client, diff_msg, model)
-        
+    print(commit_msg)    
     # create a file to edit the commit message
     with open("commit_msg.txt", "w") as commit_msg_file:
         commit_msg_file.write(commit_msg)
-    click.edit(filename=commit_msg_file.name)
+    #click.edit(filename=commit_msg_file.name)
 
     # commmt the file with the commit message 
-    stage_and_commit(repo, filename, commit_msg_file)
+    #stage_and_commit(repo, filename, commit_msg_file)
 
 if __name__ == "__main__":
     gpt_commit() 
