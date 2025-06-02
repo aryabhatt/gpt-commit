@@ -48,19 +48,19 @@ def generate_commit_message(client, diff_msg, model, new_file_flag=False):
     Returns:
         str: The generated commit message.
     """
-    messages = [
-        {  "role": "user",
-           "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
-        },
-        { "role": "user",
-          "content": "Please write a concise commit message that summarizes the newly added file with code:\n{diff_msg}"
-        }
-    ]
-
-    idx = 1 if new_file_flag else 0
+    if new_file_flag:
+        msgs = [{
+            "role": "user",
+            "content": f"Please write a concise commit message that summarizes the newly added file with code:\n{diff_msg}"
+        }]
+    else:
+        msgs = [{
+            "role": "user",
+            "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
+        }]
     response = client.chat.completions.create(
         model=model,
-        messages=messages[idx],
+        messages=msgs,
         temperature=0.0  
     )
     
