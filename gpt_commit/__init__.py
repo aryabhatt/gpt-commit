@@ -1,9 +1,10 @@
-
-import openai # CBORG API Proxy Server is OpenAI-compatible through the openai module
+""" This module provides cli tool to help create log messages for git-commits using GPT models."""
+import sys
 import json
+from pathlib import Path
 import click
 from git import Repo
-from pathlib import Path
+import openai
 
 def get_client():
     """    
@@ -14,9 +15,9 @@ def get_client():
     secrets_file = Path.home() / ".config/cborg/secrets.json"
     if not secrets_file.is_file():
         print(f"error: can't load API key from {secrets_file.as_posix()}")
-        exit(1)
+        sys.exit(1)
 
-    with open(secrets_file, "r") as f:
+    with open(secrets_file) as f:
         secrets = json.load(f)
         api_key = secrets['CBORG_API_KEY']
         base_url = secrets['CBORG_BASE_URL']
@@ -36,7 +37,7 @@ def get_models(client):
     except Exception as e:
         print(f"Error fetching models: {e}")
         return []
-    
+
 def generate_commit_message(client, diff_msg, model, new_file_flag=False):
     """
     Generates a commit message based on the provided diff message using the specified model.
@@ -61,13 +62,11 @@ def generate_commit_message(client, diff_msg, model, new_file_flag=False):
     response = client.chat.completions.create(
         model=model,
         messages=msgs,
-        temperature=0.0  
+        temperature=0.0
     )
-    
+
     if response and response.choices:
         return response.choices[0].message.content.strip()
-    else:
-        return None
 
 def stage_and_commit(repo, filename, commit_msg_file):
     """
@@ -79,8 +78,9 @@ def stage_and_commit(repo, filename, commit_msg_file):
         commit_msg_file (file): The file containing the commit message.
     """
     try:
-        with open(commit_msg_file.name, "r") as f:
+        with open(commit_msg_file.name) as f:
             commit_msg = f.read().strip()
+        repo.index.add([filename])
         repo.index.commit(commit_msg)
     except Exception as e:
         print(f"Error during staging or committing: {e}")
@@ -125,8 +125,7 @@ def gpt_commit(filename, model, list_models):
         return
 
     # Check if this is ideed a git repo
-    cwd = Path.cwd()
-    repo = Repo(cwd)
+    repo = Repo(Path.cwd())
     if repo.bare:
         print("This is not a git repository")
 
@@ -134,19 +133,22 @@ def gpt_commit(filename, model, list_models):
     if filename.as_posix() in repo.untracked_files:
         print(f"file '{filename.as_posix()}' is not tracked by git.")
         return
-    
+
     # Check if the file has been modified
     diff_list = repo.head.commit.diff(None)
-    modified_files = [diff.a_path for diff in diff_list if diff.a_path] 
+    modified_files = [diff.a_path for diff in diff_list if diff.a_path]
     new_files = [diff.b_path for diff in diff_list if diff.new_file]
 
     new_file_flag = False
     if filename.as_posix() in new_files:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             diff_msg = f.read()
             new_file_flag = True
     elif filename.as_posix() in modified_files:
         diff_msg = repo.git.diff(filename)
+    else:
+        print(f"{filename.as_posix()} has not been modified.")
+        sys.exit(0)
 
     # ask the model to generate a commit message
     commit_msg = generate_commit_message(client, diff_msg, model, new_file_flag)
@@ -158,7 +160,7 @@ def gpt_commit(filename, model, list_models):
 
     # get st_mtime of the file
     commit_msg_file_mtime = commit_msg_filename.stat().st_mtime
-    
+
     click.edit(filename=commit_msg_filename.as_posix())
     # check if the file has been edited
     if commit_msg_filename.stat().st_mtime == commit_msg_file_mtime:
@@ -170,4 +172,4 @@ def gpt_commit(filename, model, list_models):
     commit_msg_filename.unlink(missing_ok=True)
 
 if __name__ == "__main__":
-    gpt_commit() 
+    gpt_commit()
