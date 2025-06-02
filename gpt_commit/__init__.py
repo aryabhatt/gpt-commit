@@ -163,7 +163,6 @@ def gpt_commit(filename, model, list_models):
     # check if the file has been edited
     if commit_msg_filename.stat().st_mtime == commit_msg_file_mtime:
         print("No changes made to the commit message. Exiting.")
-        return
     else:
         # commit the changes
         stage_and_commit(repo, filename, commit_msg_filename)
