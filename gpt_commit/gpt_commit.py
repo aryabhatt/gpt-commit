@@ -119,8 +119,10 @@ class GitCommitHelper:
         if edit:
             with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
                 temp_file.write(commit_msg)
-            click.edit(filename=str(temp_file))
-            commit_msg = temp_file.read_text().strip()
+                temp_path = Path(temp_file.name)
+
+            click.edit(filename=str(temp_path))
+            commit_msg = temp_path.read_text().strip()
             if not commit_msg:
                 print("Commit message empty after editing. Aborting.")
                 return
