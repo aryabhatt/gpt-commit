@@ -12,19 +12,15 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
 ## Installation
 1. **Download the script**:  
    ```bash
-    git clone https://git.github.com/aryabhatt/gpt-commit.git
-    cd gpt-commit
+    pip install git+https://git.github.com/aryabhatt/gpt-commit.git
     ```
 
-2. **Dependencies**:
-   ```bash
-   pip install openai click gitpython
-    ```
+
 3. **Usage**: Obtain an API key and save it in `~/.config/cborg/secrets.json`.
     ```json
     {
         "CBORG_API_KEY": "your_api_key_here",
-        "CBORG_BASE_URL": "httsps://api.cborg.gov"
+        "CBORG_BASE_URL": "https://api.cborg.lbl.gov"
     }
     ```
 3. **Run the script**:
