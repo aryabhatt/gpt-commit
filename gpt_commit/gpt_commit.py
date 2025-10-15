@@ -1,12 +1,18 @@
-import click
+"""
+Command line tool to commit changes to a file using AI-generated commit messages.
+"""
 import os
 import json
 import tempfile
 from pathlib import Path
+import click
 from git import Repo
 import openai
 
 class GitCommitHelper:
+    """
+    Helper class to manage Git operations and OpenAI interactions.
+    """
 
     def __init__(self, api_key=None, base_url=None, secrets_file=None):
         """
@@ -17,14 +23,14 @@ class GitCommitHelper:
         self.secrets_file = secrets_file or (Path.home() / ".config/cborg/secrets.json")
         self.client = self._get_client()
         self.repo = self._get_repo()
-    
+
     def _get_client(self):
         """
         Create an OpenAI client using secrets file or environment variables.
         """
         if not self.api_key or not self.base_url:
             if self.secrets_file.exists():
-                with open(self.secrets_file) as f:
+                with open(self.secrets_file, encoding='utf-8') as f:
                     secrets = json.load(f)
                 self.api_key = secrets.get("CBORG_API_KEY") or os.getenv("CBORG_API_KEY")
                 self.base_url = secrets.get("CBORG_BASE_URL") or os.getenv("CBORG_BASE_URL")
@@ -53,7 +59,7 @@ class GitCommitHelper:
         try:
             models = self.client.models.list()
             return [m.id for m in models.data]
-        except Exception as e:
+        except (openai.OpenAIError, ConnectionError, TimeoutError) as e:
             print(f"Error fetching models: {e}")
             return []
 
@@ -66,13 +72,14 @@ class GitCommitHelper:
                 model=model,
                 messages=[{
                     "role": "user",
-                    "content": f"Please write a brief commit message for the following diff:\n{diff_msg}"
+                    "content": f"Please write a brief commit message \
+                         for the following diff:\n{diff_msg}"
                 }],
                 temperature=0.0
             )
             if response and response.choices:
                 return response.choices[0].message.content.strip()
-        except Exception as e:
+        except (openai.OpenAIError, ConnectionError, TimeoutError) as e:
             print(f"Error generating commit message: {e}")
         return None
 
@@ -82,7 +89,7 @@ class GitCommitHelper:
         """
         if filename not in self.repo.git.ls_files().splitlines():
             raise FileNotFoundError(f"'{filename}' is not tracked by git.")
-        
+
         diff_msg = self.repo.git.diff(filename) or self.repo.git.diff('HEAD', filename)
         return diff_msg
 
@@ -94,7 +101,7 @@ class GitCommitHelper:
             self.repo.git.add(filename)
             self.repo.index.commit(commit_message)
             print(f"Committed '{filename}' with message: {commit_message}")
-        except Exception as e:
+        except (OSError, ValueError) as e:
             print(f"Error during commit: {e}")
 
     def commit_file_with_ai(self, filename, model="openai/gpt-4.1", edit=True, dry_run=False):
@@ -122,7 +129,7 @@ class GitCommitHelper:
                 temp_path = Path(temp_file.name)
 
             click.edit(filename=str(temp_path))
-            commit_msg = temp_path.read_text().strip()
+            commit_msg = temp_path.read_text(encoding='utf-8').strip()
             if not commit_msg:
                 print("Commit message empty after editing. Aborting.")
                 return
@@ -137,6 +144,16 @@ class GitCommitHelper:
 @click.option("--dry-run", is_flag=True)
 @click.option("--no-edit", is_flag=False, help="No interactive mode")
 def gpt_commit(filename, model, list_models, dry_run, no_edit):
+    """
+    Commit changes to a file using AI-generated commit messages.
+    Arguments:
+        FILENAME: Path to the file to commit.
+    Options:
+        --model: Specify the language model to use.
+        --list-models: List available models and exit.
+        --dry-run: Show the generated commit message without committing.
+        --no-edit: Skip interactive editing of the commit message.
+    """
     helper = GitCommitHelper()
 
     if list_models:
@@ -145,4 +162,3 @@ def gpt_commit(filename, model, list_models, dry_run, no_edit):
         return
 
     helper.commit_file_with_ai(filename, model=model, edit=not no_edit, dry_run=dry_run)
-
