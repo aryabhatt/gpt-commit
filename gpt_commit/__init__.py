@@ -1,2 +1,1 @@
-
-from .gpt_commit import gpt_commit
+"""gpt_commit package initialization."""
