@@ -135,7 +135,7 @@ class GitCommitHelper:
 @click.option("--model", default="openai/gpt-4.1", help="Model to use")
 @click.option("--list-models", is_flag=True)
 @click.option("--dry-run", is_flag=True)
-@click.option("--no-edit", is_flag=False)
+@click.option("--no-edit", is_flag=False, help="No interactive mode")
 def gpt_commit(filename, model, list_models, dry_run, no_edit):
     helper = GitCommitHelper()
 
