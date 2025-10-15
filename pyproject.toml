@@ -4,19 +4,19 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gpt-commit"
-version = "0.1.0"
+version = "1.0.0"
 description = "A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatible API) and stages/commits files in Git."
 authors = [
     { name = "Dinesh Kumar", email = "dkumar@lbl.gov" }
 ]
 readme = "README.md"
-license = { text = "BSD-2-Clause License" }
+license = "BSD-2-Clause"
 requires-python = ">=3.8"
 dependencies = [
-    "openai",
-    "click",
-    "gitpython"
+    "openai>=1.0.0",
+    "click>=8.0.0",
+    "gitpython>=3.1.0"
 ]
 
 [project.scripts]
-gpt-commit = "gpt_commit:gpt_commit"
+gpt-commit = "gpt_commit.gpt_commit:main"
