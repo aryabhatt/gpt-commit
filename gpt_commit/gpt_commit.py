@@ -143,7 +143,7 @@ class GitCommitHelper:
 @click.option("--list-models", is_flag=True)
 @click.option("--dry-run", is_flag=True)
 @click.option("--no-edit", is_flag=False, help="No interactive mode")
-def gpt_commit(filename, model, list_models, dry_run, no_edit):
+def main(filename, model, list_models, dry_run, no_edit):
     """
     Commit changes to a file using AI-generated commit messages.
     Arguments:
