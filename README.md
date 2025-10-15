@@ -25,10 +25,11 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
     ```
 3. **Run the script**:
     ```bash
-    gpt-commit <file_path> [--model <model_name>] [--list-models]
-   ```
+    gpt-commit [options] <file_path>
+    ```
     
     - `<file_path>`: Path to the file you want to commit.
     - `--model <model_name>`: Specify the model to use (default is `openai/gpt-4.1`).
     - `--list-models`: List available models.
-
+    - `--dry-run`: Self explanatory.
+    - `--no-edit`: Commit without open the message in editor.
