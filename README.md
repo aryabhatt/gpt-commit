@@ -12,7 +12,7 @@ A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatibl
 ## Installation
 1. **Download the script**:  
    ```bash
-    pip install git+https://git.github.com/aryabhatt/gpt-commit.git
+    pipx install https://github.com/aryabhatt/gpt-commit.git
     ```
 
 
