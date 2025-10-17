@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "gpt-commit"
-version = "1.0.0"
+version = "1.0.1"
 description = "A CLI tool that generates commit messages using AI (via CBORG's OpenAI-compatible API) and stages/commits files in Git."
 authors = [
     { name = "Dinesh Kumar", email = "dkumar@lbl.gov" }
