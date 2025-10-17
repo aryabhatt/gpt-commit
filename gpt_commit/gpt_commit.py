@@ -128,10 +128,22 @@ class GitCommitHelper:
                 temp_file.write(commit_msg)
                 temp_path = Path(temp_file.name)
 
+            # get timestamp on the file
+            pre_edit_tstamp = temp_path.stat().st_mtime
             click.edit(filename=str(temp_path))
+
+            # get timestamp after edit
+            post_edit_tstamp = tmp.path.stat().st_mtime
+            
+            # if file was not modied don't commit
+            if pre_edit_tstamp == post_edit_tstamp:
+                print("No changes were commited.")
+                return
+
+            # if commit_msg is empty don't commit
             commit_msg = temp_path.read_text(encoding='utf-8').strip()
             if not commit_msg:
-                print("Commit message empty after editing. Aborting.")
+                print("No changes were commited.")
                 return
 
         self.stage_and_commit(filename, commit_msg)
