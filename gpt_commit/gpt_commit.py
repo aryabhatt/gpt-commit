@@ -118,8 +118,6 @@ class GitCommitHelper:
             print("Failed to generate commit message.")
             return
 
-        print(f"Generated commit message:\n{commit_msg}")
-
         if dry_run:
             return
 
@@ -133,7 +131,7 @@ class GitCommitHelper:
             click.edit(filename=str(temp_path))
 
             # get timestamp after edit
-            post_edit_tstamp = tmp.path.stat().st_mtime
+            post_edit_tstamp = temp_path.stat().st_mtime
             
             # if file was not modied don't commit
             if pre_edit_tstamp == post_edit_tstamp:
